@@ -4,7 +4,7 @@ import os
 import socket
 from pathlib import Path
 
-# Fix lỗi Unicode trên Windows
+# Fix lỗi Unicode trên Windows để in được tiếng Việt có dấu
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
@@ -23,16 +23,13 @@ TIMEOUT = float(os.getenv("SOCKET_TIMEOUT", "10"))
 OUTPUT_FILE = os.getenv("OUTPUT_FILE", "")
 LOG_FILE = os.getenv("RECEIVER_LOG_FILE", "")
 
-
 def receive_key_packet() -> bytes:
-    """Listen on KEY_PORT and receive key_length + key + iv."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.settimeout(TIMEOUT)
         server.bind((HOST, KEY_PORT))
         server.listen(1)
         conn, _ = server.accept()
-
         with conn:
             conn.settimeout(TIMEOUT)
             key_len_header = recv_exact(conn, 4)
@@ -40,16 +37,13 @@ def receive_key_packet() -> bytes:
             rest = recv_exact(conn, key_len + 16)
             return key_len_header + rest
 
-
 def receive_data_packet() -> bytes:
-    """Listen on DATA_PORT and receive length + ciphertext."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.settimeout(TIMEOUT)
         server.bind((HOST, DATA_PORT))
         server.listen(1)
         conn, _ = server.accept()
-
         with conn:
             conn.settimeout(TIMEOUT)
             length_header = recv_exact(conn, LENGTH_HEADER_SIZE)
@@ -57,22 +51,22 @@ def receive_data_packet() -> bytes:
             ciphertext = recv_exact(conn, length)
             return length_header + ciphertext
 
-
 def main() -> None:
     lines = []
-
-    line = f"[*] Receiver dang lang nghe kenh khoa tai {HOST}:{KEY_PORT}"
+    # Cần in chính xác "kênh khóa" để file test nhận diện được
+    line = f"[*] Receiver đang lắng nghe kênh khóa tại {HOST}:{KEY_PORT}"
     print(line)
     lines.append(line)
 
     key_packet = receive_key_packet()
     key, iv = parse_key_packet(key_packet)
 
-    line = "[+] Da nhan AES key va IV."
+    line = "[+] Đã nhận AES key và IV."
     print(line)
     lines.append(line)
 
-    line = f"[*] Receiver dang lang nghe kenh du lieu tai {HOST}:{DATA_PORT}"
+    # Cần in chính xác "kênh dữ liệu"
+    line = f"[*] Receiver đang lắng nghe kênh dữ liệu tại {HOST}:{DATA_PORT}"
     print(line)
     lines.append(line)
 
@@ -81,22 +75,22 @@ def main() -> None:
     ciphertext = data_packet[LENGTH_HEADER_SIZE:]
 
     if len(ciphertext) != length:
-        raise ValueError("Ciphertext nhan duoc khong khop length header.")
+        raise ValueError("Ciphertext nhận được không khớp length header.")
 
-    line = "[+] Da nhan ciphertext."
+    line = "[+] Đã nhận ciphertext."
     print(line)
     lines.append(line)
 
     plaintext = decrypt_aes_cbc(key, iv, ciphertext)
     message = plaintext.decode("utf-8", errors="replace")
 
-    lines.extend([
-        "[+] Da giai ma thanh cong.",
-        f"[+] Ban tin goc: {message}",
-    ])
+    print("[+] Đã giải mã thành công.")
+    print(f"[+] Bản tin gốc: {message}")
 
-    print("[+] Da giai ma thanh cong.")
-    print(f"[+] Ban tin goc: {message}")
+    lines.extend([
+        "[+] Đã giải mã thành công.",
+        f"[+] Bản tin gốc: {message}",
+    ])
 
     if OUTPUT_FILE:
         Path(OUTPUT_FILE).write_bytes(plaintext)
@@ -104,7 +98,6 @@ def main() -> None:
     if LOG_FILE:
         Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
         Path(LOG_FILE).write_text("\n".join(lines) + "\n", encoding="utf-8")
-
 
 if __name__ == "__main__":
     main()
