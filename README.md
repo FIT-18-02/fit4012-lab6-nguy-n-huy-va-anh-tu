@@ -13,24 +13,22 @@ Lab này kế thừa ý tưởng từ Lab 3 DES Socket, nhưng nâng cấp theo 
 > Lưu ý quan trọng: kênh khóa trong bài này chỉ là mô phỏng học tập. Key và IV vẫn được gửi plaintext, vì vậy thiết kế này **không an toàn để dùng trong hệ thống thật**.
 
 ---
-
 ## Team members
 
-- **Thành viên 1**: TODO_MEMBER_1 - MSSV: TODO_MEMBER_1_ID
-- **Thành viên 2**: TODO_MEMBER_2 - MSSV: TODO_MEMBER_2_ID
+- **Thành viên 1**: Nguyễn Văn Huy - MSSV: 1871020313
+- **Thành viên 2**: Phạm Anh Tú - MSSV: 1871020615
 
 ## Task division
 
-- **Thành viên 1 phụ trách chính**: TODO_ROLE_MEMBER_1
-- **Thành viên 2 phụ trách chính**: TODO_ROLE_MEMBER_2
-- **Phần làm chung**: TODO_SHARED_WORK
+- **Thành viên 1 phụ trách chính**: Viết script Sender, xử lý AES encryption, tạo header socket.
+- **Thành viên 2 phụ trách chính**: Viết script Receiver, xử lý giải mã, viết unit tests.
+- **Phần làm chung**: Phân tích Threat model và viết báo cáo.
 
 ## Demo roles
 
-- **Demo Sender / kênh khóa / log gửi**: TODO_DEMO_ROLE_1
-- **Demo Receiver / kênh dữ liệu / giải mã**: TODO_DEMO_ROLE_2
-- **Cả hai cùng trả lời threat model và ethics**: TODO_DEMO_ROLE_SHARED
-
+- **Demo Sender / kênh khóa / log gửi**: Nguyễn Văn Huy
+- **Demo Receiver / kênh dữ liệu / giải mã**: Phạm Anh Tú
+- **Cả hai cùng trả lời threat model và ethics**: Cả hai
 ---
 
 ## Mục tiêu học tập
