@@ -1,6 +1,11 @@
 import os
 import socket
+import sys
+import io
 from pathlib import Path
+
+# Fix lỗi Unicode trên Windows
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 from aes_socket_utils import build_data_packet, build_key_packet, encrypt_aes_cbc
 
@@ -20,7 +25,7 @@ def get_plaintext() -> bytes:
         return Path(INPUT_FILE).read_bytes()
     if MESSAGE_ENV is not None:
         return MESSAGE_ENV.encode("utf-8")
-    return input("Nhập bản tin: ").encode("utf-8")
+    return input("Nhap ban tin: ").encode("utf-8")
 
 
 def send_packet(host: str, port: int, packet: bytes) -> None:
@@ -42,9 +47,9 @@ def main() -> None:
     send_packet(SERVER_IP, DATA_PORT, data_packet)
 
     lines = [
-        "[+] Đã tạo AES key và IV.",
-        "[+] Đã gửi key/IV qua kênh khóa.",
-        "[+] Đã gửi ciphertext qua kênh dữ liệu.",
+        "[+] Da tao AES key va IV.",
+        "[+] Da gui key/IV qua kenh khoa.",
+        "[+] Da gui ciphertext qua kenh du lieu.",
         f"Server: {SERVER_IP}",
         f"Key port: {KEY_PORT}",
         f"Data port: {DATA_PORT}",

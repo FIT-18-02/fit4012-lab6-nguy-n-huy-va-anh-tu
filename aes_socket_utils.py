@@ -48,10 +48,10 @@ def validate_key_iv(key: bytes, iv: bytes) -> None:
 
 
 def encrypt_aes_cbc(
-    plain: bytes,
-    key: bytes | None = None,
-    iv: bytes | None = None,
-    key_size: int = 16,
+        plain: bytes,
+        key: bytes | None = None,
+        iv: bytes | None = None,
+        key_size: int = 16,
 ) -> Tuple[bytes, bytes, bytes]:
     """Encrypt plaintext with AES-CBC and PKCS#7 padding."""
     if key is None or iv is None:
@@ -135,3 +135,15 @@ def recv_exact(conn, n: int) -> bytes:
         chunks.append(chunk)
         received += len(chunk)
     return b"".join(chunks)
+
+
+def parse_data_packet(packet: bytes) -> bytes:
+    """Parse data channel packet: return ciphertext."""
+    if len(packet) < LENGTH_HEADER_SIZE:
+        raise ValueError("Data packet quá ngắn.")
+    ct_len = struct.unpack("!I", packet[:LENGTH_HEADER_SIZE])[0]
+    if ct_len <= 0:
+        raise ValueError("Ciphertext length phải > 0")
+    if len(packet) != LENGTH_HEADER_SIZE + ct_len:
+        raise ValueError("Data packet có độ dài không đúng.")
+    return packet[LENGTH_HEADER_SIZE:]
