@@ -4,7 +4,7 @@ import os
 import socket
 from pathlib import Path
 
-# Fix lỗi Unicode trên Windows để in được tiếng Việt có dấu
+# Fix lỗi Unicode để in tiếng Việt có dấu chính xác trên CI/CD
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
@@ -26,9 +26,10 @@ LOG_FILE = os.getenv("RECEIVER_LOG_FILE", "")
 def receive_key_packet() -> bytes:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.settimeout(TIMEOUT)
         server.bind((HOST, KEY_PORT))
         server.listen(1)
+        # In thông báo để script test bắt đầu chạy sender.py
+        print(f"[*] Receiver đang lắng nghe kênh khóa tại {HOST}:{KEY_PORT}", flush=True)
         conn, _ = server.accept()
         with conn:
             conn.settimeout(TIMEOUT)
@@ -40,9 +41,9 @@ def receive_key_packet() -> bytes:
 def receive_data_packet() -> bytes:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.settimeout(TIMEOUT)
         server.bind((HOST, DATA_PORT))
         server.listen(1)
+        print(f"[*] Receiver đang lắng nghe kênh dữ liệu tại {HOST}:{DATA_PORT}", flush=True)
         conn, _ = server.accept()
         with conn:
             conn.settimeout(TIMEOUT)
@@ -53,23 +54,15 @@ def receive_data_packet() -> bytes:
 
 def main() -> None:
     lines = []
-    # Cần in chính xác "kênh khóa" để file test nhận diện được
-    line = f"[*] Receiver đang lắng nghe kênh khóa tại {HOST}:{KEY_PORT}"
-    print(line)
-    lines.append(line)
 
+    # Bước 1: Nhận Key
     key_packet = receive_key_packet()
     key, iv = parse_key_packet(key_packet)
+    line1 = "[+] Đã nhận AES key và IV."
+    print(line1, flush=True)
+    lines.append(line1)
 
-    line = "[+] Đã nhận AES key và IV."
-    print(line)
-    lines.append(line)
-
-    # Cần in chính xác "kênh dữ liệu"
-    line = f"[*] Receiver đang lắng nghe kênh dữ liệu tại {HOST}:{DATA_PORT}"
-    print(line)
-    lines.append(line)
-
+    # Bước 2: Nhận Data
     data_packet = receive_data_packet()
     length = parse_length_header(data_packet[:LENGTH_HEADER_SIZE])
     ciphertext = data_packet[LENGTH_HEADER_SIZE:]
@@ -77,20 +70,20 @@ def main() -> None:
     if len(ciphertext) != length:
         raise ValueError("Ciphertext nhận được không khớp length header.")
 
-    line = "[+] Đã nhận ciphertext."
-    print(line)
-    lines.append(line)
+    line2 = "[+] Đã nhận ciphertext."
+    print(line2, flush=True)
+    lines.append(line2)
 
+    # Giải mã
     plaintext = decrypt_aes_cbc(key, iv, ciphertext)
     message = plaintext.decode("utf-8", errors="replace")
 
-    print("[+] Đã giải mã thành công.")
-    print(f"[+] Bản tin gốc: {message}")
+    success_msg = "[+] Đã giải mã thành công."
+    plain_msg = f"[+] Bản tin gốc: {message}"
+    print(success_msg, flush=True)
+    print(plain_msg, flush=True)
 
-    lines.extend([
-        "[+] Đã giải mã thành công.",
-        f"[+] Bản tin gốc: {message}",
-    ])
+    lines.extend([success_msg, plain_msg])
 
     if OUTPUT_FILE:
         Path(OUTPUT_FILE).write_bytes(plaintext)

@@ -25,11 +25,20 @@ def get_plaintext() -> bytes:
         return MESSAGE_ENV.encode("utf-8")
     return input("Nhập bản tin: ").encode("utf-8")
 
-def send_packet(host: str, port: int, packet: bytes) -> None:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(TIMEOUT)
-        sock.connect((host, port))
-        sock.sendall(packet)
+def send_packet(host: str, port: int, packet: bytes):
+    """Gửi packet với cơ chế retry nếu kết nối bị từ chối."""
+    max_retries = 5
+    for i in range(max_retries):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(TIMEOUT)
+                sock.connect((host, port))
+                sock.sendall(packet)
+                return # Thành công
+        except ConnectionRefusedError:
+            if i == max_retries - 1:
+                raise
+            time.sleep(0.5) # Đợi receiver mở port
 
 def main() -> None:
     plaintext = get_plaintext()
@@ -38,11 +47,11 @@ def main() -> None:
     key_packet = build_key_packet(key, iv)
     data_packet = build_data_packet(ciphertext)
 
-    # Gửi Key
+    # Gửi Key trước
     send_packet(SERVER_IP, KEY_PORT, key_packet)
 
-    # Nghỉ 0.2 giây để Receiver kịp chuyển sang lắng nghe cổng Data
-    time.sleep(0.2)
+    # Nghỉ một chút để Receiver chuyển trạng thái sang nghe DATA_PORT
+    time.sleep(0.3)
 
     # Gửi Data
     send_packet(SERVER_IP, DATA_PORT, data_packet)
@@ -63,7 +72,7 @@ def main() -> None:
     ]
 
     for line in lines:
-        print(line)
+        print(line, flush=True)
 
     if LOG_FILE:
         Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
