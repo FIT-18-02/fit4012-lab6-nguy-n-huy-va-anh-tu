@@ -1,3 +1,8 @@
+# Peer Review Response - Lab 6 AES-CBC Socket
+
+## Thành viên nhóm
+- Phạm Anh Tú
+- Nguyễn Văn Huy
 ## Phản hồi đánh giá chéo
 
 ### 1. Về Sender và Receiver
